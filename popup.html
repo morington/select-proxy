@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <title>Proxy by morington</title>
+
+  <style>
+    :root { color-scheme: dark; }
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      padding: 0;
+      background: #0d0e11;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+      display: flex;
+      justify-content: center;
+    }
+
+    #wrapper {
+      width: 520px;
+      background: #181a20;
+      border-radius: 10px;
+      border: 1px solid #26272e;
+      padding: 14px 16px 20px;
+      color: #e1e1e1;
+      box-shadow: 0 0 18px rgba(0,0,0,0.4);
+    }
+
+    #header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    #header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    #header h1 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 600;
+      color: #f5f5f5;
+    }
+
+    #proxyPowerWrap {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+    }
+
+    #proxyPowerLabel {
+      font-size: 12px;
+      color: #d3d3d3;
+    }
+
+    .toggle-power {
+      position: relative;
+      width: 44px;
+      height: 22px;
+      background: #2c2f36;
+      border-radius: 22px;
+      transition: background 0.2s;
+    }
+
+    .toggle-power::after {
+      content: "";
+      position: absolute;
+      width: 18px;
+      height: 18px;
+      background: #fff;
+      border-radius: 50%;
+      top: 2px;
+      left: 2px;
+      transition: transform 0.2s;
+    }
+
+    .toggle-power.on {
+      background: #2ecc71;
+    }
+
+    .toggle-power.on::after {
+      transform: translateX(22px);
+    }
+
+    span {
+      font-size: 11px;
+      color: #8b8f9a;
+    }
+
+    a.tg-link {
+      color: #4e8cff;
+      text-decoration: none;
+    }
+
+    .row { margin-bottom: 14px; }
+    .label { font-size: 12px; color: #a3a7b3; margin-bottom: 4px; }
+
+    input[type="text"],
+    input[type="number"],
+    select,
+    textarea {
+      width: 100%;
+      background: #101217;
+      border-radius: 8px;
+      border: 1px solid #2e3038;
+      color: #f1f1f1;
+      font-size: 13px;
+      padding: 6px 8px;
+      outline: none;
+      transition: 0.15s;
+    }
+
+    input:focus,
+    textarea:focus,
+    select:focus {
+      border-color: #4e8cff;
+      box-shadow: 0 0 8px rgba(78,140,255,0.35);
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 55px;
+      line-height: 1.4;
+    }
+
+    #profile-row {
+      display: grid;
+      grid-template-columns: 1.5fr 1fr auto auto auto;
+      gap: 6px;
+      align-items: center;
+    }
+
+    button.icon-btn {
+      width: 34px;
+      height: 34px;
+      border: none;
+      border-radius: 8px;
+      background: #2b2f3a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: 0.15s;
+    }
+
+    button.icon-btn img {
+      width: 18px;
+      height: 18px;
+    }
+
+    .save-green { background: #2ecc71 !important; }
+    .save-yellow { background: #e6c447 !important; }
+
+    #deleteBtn:hover { background: #e74c3c !important; }
+    #resetBtn:hover { background: #4e8cff !important; }
+
+    #proxy-grid {
+      display: grid;
+      grid-template-columns: 0.8fr 1.7fr 0.6fr;
+      gap: 6px 8px;
+      align-items: center;
+    }
+
+    #proxy-grid .name {
+      font-size: 12px;
+      color: #b5b9c5;
+    }
+
+    #scheme-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 4px;
+    }
+
+    .radio-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 12px;
+      cursor: pointer;
+      color: #d3d6df;
+    }
+
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .toggle-text {
+      font-size: 13px;
+      color: #d8d8d8;
+      font-weight: 500;
+    }
+
+    .toggle-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .toggle {
+      position: relative;
+      width: 44px;
+      height: 22px;
+      background: #2c2f36;
+      border-radius: 22px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .toggle::after {
+      content: "";
+      position: absolute;
+      width: 18px;
+      height: 18px;
+      background: #fff;
+      border-radius: 50%;
+      top: 2px;
+      left: 2px;
+      transition: transform 0.2s;
+    }
+
+    .toggle.on {
+      background: #4e8cff;
+    }
+
+    .toggle.on::after {
+      transform: translateX(22px);
+    }
+
+    .info {
+      width: 16px;
+      height: 16px;
+      cursor: pointer;
+      opacity: 0.8;
+    }
+
+    #infoBox {
+      background: #1e1f25;
+      border: 1px solid #30323a;
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 12px;
+      line-height: 1.4;
+      color: #cdd0d8;
+      margin-top: 8px;
+      display: none;
+      opacity: 0;
+      transition: 0.25s;
+    }
+
+    #infoBox.show {
+      display: block;
+      opacity: 1;
+    }
+
+    #copyBlock {
+      margin-top: 10px;
+      background: #101217;
+      border: 1px solid #2e3038;
+      border-radius: 8px;
+      padding: 8px 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    #copyBlock .list {
+      font-family: monospace;
+      font-size: 12px;
+      color: #9fa3ad;
+      overflow-x: auto;
+    }
+
+    #copyButton {
+      background: #2c2f36;
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+    }
+
+    #status {
+      margin-top: 6px;
+      font-size: 11px;
+      color: #8b8f9a;
+      min-height: 14px;
+    }
+
+    #importExportRow {
+      margin-top: 18px;
+      text-align: right;
+      font-size: 12px;
+    }
+
+    #importExportRow a {
+      color: #4e8cff;
+      margin-left: 15px;
+      cursor: pointer;
+      text-decoration: none;
+    }
+  </style>
+</head>
+
+<body>
+<div id="wrapper">
+
+  <div id="header">
+    <div id="header-left">
+      <h1>Proxy</h1>
+
+      <div id="proxyPowerWrap">
+        <div id="proxyPowerToggle" class="toggle-power"></div>
+        <div id="proxyPowerLabel">Выкл</div>
+      </div>
+    </div>
+
+    <span>by <a href="https://t.me/morington" target="_blank" class="tg-link">morington</a></span>
+  </div>
+
+  <div class="row">
+    <div class="label">Профиль</div>
+
+    <div id="profile-row">
+      <input id="profileName" type="text" placeholder="Название профиля">
+      <select id="profileSelect"></select>
+
+      <button id="saveBtn" class="icon-btn save-green">
+        <img src="icons/components/save.svg">
+      </button>
+      <button id="deleteBtn" class="icon-btn">
+        <img src="icons/components/delete.svg">
+      </button>
+      <button id="resetBtn" class="icon-btn">
+        <img src="icons/components/reset.svg">
+      </button>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="toggle-row">
+      <div class="toggle-text" id="modeText">Введённые адреса будут проксироваться</div>
+      <div class="toggle-wrapper">
+        <div id="modeToggle" class="toggle"></div>
+        <img id="infoIcon" src="icons/components/info.svg" class="info">
+      </div>
+    </div>
+
+    <div id="infoBox">
+      <div>
+        Если вы используете режим, при котором все сайты идут через прокси,
+        а введённые адреса исключаются, рекомендуется добавить сюда локальные адреса,
+        чтобы внутренняя сеть и программы работали корректно.
+      </div>
+
+      <div id="copyBlock">
+        <div class="list" id="copyList">localhost, 127.0.0.1, 192.168.*.*</div>
+        <div id="copyButton"><img src="icons/components/copy.svg" width="16"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="label">Адреса</div>
+    <textarea id="targets" rows="3"></textarea>
+  </div>
+
+  <div class="row">
+    <div class="label">Настройки прокси</div>
+
+    <div id="proxy-grid">
+      <div class="name">HTTP Proxy</div>
+      <input id="httpHost" type="text">
+      <input id="httpPort" type="number">
+
+      <div class="name">SSL Proxy</div>
+      <input id="sslHost" type="text">
+      <input id="sslPort" type="number">
+
+      <div class="name">FTP Proxy</div>
+      <input id="ftpHost" type="text">
+      <input id="ftpPort" type="number">
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="label">Тип прокси</div>
+
+    <div id="scheme-row">
+      <label class="radio-label"><input type="radio" name="scheme" value="http">HTTP</label>
+      <label class="radio-label"><input type="radio" name="scheme" value="https">HTTPS</label>
+      <label class="radio-label"><input type="radio" name="scheme" value="socks4">SOCKS v4</label>
+      <label class="radio-label"><input type="radio" name="scheme" value="socks5" checked>SOCKS v5</label>
+    </div>
+  </div>
+
+  <div id="status"></div>
+
+  <div id="importExportRow">
+    <a id="exportSettings">Export settings</a>
+    <a id="importSettings">Import settings</a>
+    <input id="importFile" type="file" accept="application/json" style="display:none;">
+  </div>
+
+</div>
+
+<script src="popup.js"></script>
+</body>
+</html>
