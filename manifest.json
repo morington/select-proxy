@@ -1,10 +1,20 @@
 {
   "manifest_version": 3,
   "name": "Select Proxy",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Выборочный прокси: только указанные домены/IP-адреса проходят через прокси",
 
-  "permissions": ["proxy", "storage", "notifications"],
+  "permissions": [
+    "proxy",
+    "storage",
+    "notifications",
+    "tabs",
+    "webNavigation"
+  ],
+
+  "host_permissions": [
+    "<all_urls>"
+  ],
 
   "action": {
     "default_popup": "popup.html"
@@ -21,8 +31,6 @@
     "64": "icons/64.png"
   },
 
-  "host_permissions": ["<all_urls>"],
-
   "web_accessible_resources": [
     {
       "resources": [
@@ -31,7 +39,22 @@
         "icons/48.png",
         "icons/64.png"
       ],
-      "matches": ["<all_urls>"]
+      "matches": [
+        "<all_urls>"
+      ]
+    }
+  ],
+
+  "content_scripts": [
+    {
+      "matches": [
+        "http://*/*",
+        "https://*/*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "run_at": "document_end"
     }
   ]
 }

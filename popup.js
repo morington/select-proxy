@@ -11,12 +11,6 @@ const els = {
 
     modeToggle: document.getElementById("modeToggle"),
     modeText: document.getElementById("modeText"),
-    infoIcon: document.getElementById("infoIcon"),
-    infoBox: document.getElementById("infoBox"),
-    copyButton: document.getElementById("copyButton"),
-    copyList: document.getElementById("copyList"),
-
-    targets: document.getElementById("targets"),
 
     httpHost: document.getElementById("httpHost"),
     httpPort: document.getElementById("httpPort"),
@@ -25,7 +19,15 @@ const els = {
     ftpHost: document.getElementById("ftpHost"),
     ftpPort: document.getElementById("ftpPort"),
 
-    schemeRadios: document.querySelectorAll('input[name="scheme"]'),
+    targets: document.getElementById("targets"),
+    addCurrentBtn: document.getElementById("addCurrentBtn"),
+
+    toggleFastProxy: document.getElementById("toggleFastProxy"),
+
+    infoIcon: document.getElementById("infoIcon"),
+    infoBox: document.getElementById("infoBox"),
+    copyButton: document.getElementById("copyButton"),
+    copyList: document.getElementById("copyList"),
 
     exportSettings: document.getElementById("exportSettings"),
     importSettings: document.getElementById("importSettings"),
@@ -37,37 +39,8 @@ const els = {
 const DEFAULT_HOST = "127.0.0.1";
 const DEFAULT_PORT = "12334";
 const DEFAULT_SCHEME = "socks5";
-const DEFAULT_PROFILE = "Default";
 const DEFAULT_MODE = "proxy";
-
-function getSelectedScheme() {
-    for (const r of els.schemeRadios) if (r.checked) return r.value;
-    return DEFAULT_SCHEME;
-}
-
-function setSelectedScheme(s) {
-    let ok = false;
-    els.schemeRadios.forEach(r => {
-        if (r.value === s) {
-            r.checked = true;
-            ok = true;
-        }
-    });
-    if (!ok) {
-        els.schemeRadios.forEach(r => {
-            if (r.value === DEFAULT_SCHEME) r.checked = true;
-        });
-    }
-}
-
-function showStatus(t) {
-    els.status.textContent = t || "";
-}
-
-function markDirty() {
-    els.saveBtn.classList.remove("save-green");
-    els.saveBtn.classList.add("save-yellow");
-}
+const DEFAULT_PROFILE = "Default";
 
 function storageGet(keys) {
     return new Promise(r => chrome.storage.local.get(keys, r));
@@ -77,32 +50,61 @@ function storageSet(obj) {
     return new Promise(r => chrome.storage.local.set(obj, r));
 }
 
-function storageRemove(k) {
-    return new Promise(r => chrome.storage.local.remove(k, r));
+function storageRemove(key) {
+    return new Promise(r => chrome.storage.local.remove(key, r));
 }
 
-function parseTargets(text) {
-    return text
-    .split(/[\n,]+/)
-    .map(s => s.trim())
-    .filter(Boolean)
-    .map(cleanTarget)
-    .filter(Boolean);
+function showStatus(t) {
+    if (els.status) els.status.textContent = t || "";
 }
 
-function cleanTarget(str) {
+function markDirty() {
+    els.saveBtn.classList.remove("save-green");
+    els.saveBtn.classList.add("save-yellow");
+}
+
+function cleanTarget(v) {
     try {
-        if (str.includes("://")) return new URL(str).hostname;
-            if (str.includes("/") || str.includes("?"))
-                return new URL("http://" + str).hostname;
-        return str;
-    } catch (_) {
-        return str.replace(/^https?:\/\//, "").replace(/\/.*$/, "").trim();
+        if (v.includes("://")) return new URL(v).hostname;
+        if (v.includes("/") || v.includes("?")) return new URL("http://" + v).hostname;
+        return v;
+    } catch {
+        return v.replace(/^https?:\/\//, "").replace(/\/.*$/, "").trim();
     }
 }
 
-function setMode(m) {
-    if (m === "proxy") {
+function parseTargets(str) {
+    return str
+        .split(/[\n,]+/)
+        .map(v => v.trim())
+        .filter(Boolean)
+        .map(cleanTarget);
+}
+
+function setScheme(scheme) {
+    const radios = document.querySelectorAll('input[name="scheme"]');
+    let found = false;
+    radios.forEach(r => {
+        if (r.value === scheme) {
+            r.checked = true;
+            found = true;
+        }
+    });
+    if (!found) {
+        radios.forEach(r => {
+            if (r.value === DEFAULT_SCHEME) r.checked = true;
+        });
+    }
+}
+
+function getScheme() {
+    const radios = document.querySelectorAll('input[name="scheme"]');
+    for (const r of radios) if (r.checked) return r.value;
+    return DEFAULT_SCHEME;
+}
+
+function setMode(mode) {
+    if (mode === "proxy") {
         els.modeToggle.classList.remove("on");
         els.modeText.textContent = "Введённые адреса будут проксироваться";
     } else {
@@ -115,22 +117,32 @@ function getMode() {
     return els.modeToggle.classList.contains("on") ? "bypass" : "proxy";
 }
 
-function fillDefaultForm() {
-    els.targets.value = "";
-    els.httpHost.value = DEFAULT_HOST;
-    els.httpPort.value = DEFAULT_PORT;
-    els.sslHost.value = DEFAULT_HOST;
-    els.sslPort.value = DEFAULT_PORT;
-    els.ftpHost.value = DEFAULT_HOST;
-    els.ftpPort.value = DEFAULT_PORT;
-    setSelectedScheme(DEFAULT_SCHEME);
-    setMode(DEFAULT_MODE);
+function updatePowerToggle(on) {
+    if (on) {
+        els.proxyPowerToggle.classList.add("on");
+        els.proxyPowerLabel.textContent = "Вкл";
+    } else {
+        els.proxyPowerToggle.classList.remove("on");
+        els.proxyPowerLabel.textContent = "Выкл";
+    }
+}
+
+function updateFastProxyToggle(on) {
+    if (on) els.toggleFastProxy.classList.add("on");
+    else els.toggleFastProxy.classList.remove("on");
 }
 
 async function ensureDefaults() {
-    const d = await storageGet(["profiles", "activeProfile", "proxyEnabled"]);
+    const d = await storageGet(["profiles", "activeProfile", "proxyEnabled", "showTabProxy"]);
+
     let profiles = d.profiles || [];
     let active = d.activeProfile;
+    let showTabProxy = d.showTabProxy;
+
+    if (showTabProxy === undefined) {
+        showTabProxy = true;
+        await storageSet({ showTabProxy: true });
+    }
 
     if (!profiles.length) {
         profiles = [DEFAULT_PROFILE];
@@ -149,13 +161,15 @@ async function ensureDefaults() {
             profiles,
             activeProfile: DEFAULT_PROFILE,
             proxyEnabled: false,
+            showTabProxy,
             ["profile:" + DEFAULT_PROFILE]: obj
         });
 
         return {
             profiles,
             activeProfile: DEFAULT_PROFILE,
-            proxyEnabled: false
+            proxyEnabled: false,
+            showTabProxy
         };
     }
 
@@ -167,12 +181,53 @@ async function ensureDefaults() {
     return {
         profiles,
         activeProfile: active,
-        proxyEnabled: d.proxyEnabled ?? false
+        proxyEnabled: d.proxyEnabled ?? false,
+        showTabProxy
     };
+}
+
+async function loadProfile(name) {
+    const d = await storageGet("profile:" + name);
+    const p = d["profile:" + name];
+
+    if (!p) {
+        fillDefaultForm();
+        els.saveBtn.classList.add("save-yellow");
+        return;
+    }
+
+    els.targets.value = (p.targets || []).join(", ");
+    els.httpHost.value = p.http?.host || DEFAULT_HOST;
+    els.httpPort.value = p.http?.port || DEFAULT_PORT;
+    els.sslHost.value = p.ssl?.host || DEFAULT_HOST;
+    els.sslPort.value = p.ssl?.port || DEFAULT_PORT;
+    els.ftpHost.value = p.ftp?.host || DEFAULT_HOST;
+    els.ftpPort.value = p.ftp?.port || DEFAULT_PORT;
+
+    setScheme(p.scheme || DEFAULT_SCHEME);
+    setMode(p.mode || DEFAULT_MODE);
+
+    els.saveBtn.classList.add("save-green");
+    els.saveBtn.classList.remove("save-yellow");
+    showStatus("");
+}
+
+function fillDefaultForm() {
+    els.targets.value = "";
+    els.httpHost.value = DEFAULT_HOST;
+    els.httpPort.value = DEFAULT_PORT;
+    els.sslHost.value = DEFAULT_HOST;
+    els.sslPort.value = DEFAULT_PORT;
+    els.ftpHost.value = DEFAULT_HOST;
+    els.ftpPort.value = DEFAULT_PORT;
+
+    setScheme(DEFAULT_SCHEME);
+    setMode(DEFAULT_MODE);
 }
 
 async function loadProfilesIntoUI() {
     const d = await ensureDefaults();
+
     els.profileSelect.textContent = "";
     d.profiles.forEach(n => {
         const o = document.createElement("option");
@@ -182,63 +237,27 @@ async function loadProfilesIntoUI() {
 
     els.profileSelect.value = d.activeProfile;
     els.profileName.value = d.activeProfile;
+
     updatePowerToggle(d.proxyEnabled);
+    updateFastProxyToggle(d.showTabProxy);
 
     await loadProfile(d.activeProfile);
 }
 
-async function loadProfile(name) {
-    const d = await storageGet("profile:" + name);
-    const pr = d["profile:" + name];
-
-    if (!pr) {
-        fillDefaultForm();
-        els.saveBtn.classList.add("save-yellow");
-        return;
-    }
-
-    els.targets.value = (pr.targets || []).join(", ");
-    els.httpHost.value = pr.http?.host || DEFAULT_HOST;
-    els.httpPort.value = pr.http?.port || DEFAULT_PORT;
-    els.sslHost.value = pr.ssl?.host || DEFAULT_HOST;
-    els.sslPort.value = pr.ssl?.port || DEFAULT_PORT;
-    els.ftpHost.value = pr.ftp?.host || DEFAULT_HOST;
-    els.ftpPort.value = pr.ftp?.port || DEFAULT_PORT;
-
-    setSelectedScheme(pr.scheme || DEFAULT_SCHEME);
-    setMode(pr.mode || DEFAULT_MODE);
-
-    els.saveBtn.classList.add("save-green");
-    els.saveBtn.classList.remove("save-yellow");
-    showStatus("");
-}
-
-function buildFormProfile(name) {
-    return {
-        name,
-        targets: parseTargets(els.targets.value),
-        http: {
-            host: els.httpHost.value.trim() || DEFAULT_HOST,
-            port: els.httpPort.value.trim() || DEFAULT_PORT
-        },
-        ssl: {
-            host: els.sslHost.value.trim() || DEFAULT_HOST,
-            port: els.sslPort.value.trim() || DEFAULT_PORT
-        },
-        ftp: {
-            host: els.ftpHost.value.trim() || DEFAULT_HOST,
-            port: els.ftpPort.value.trim() || DEFAULT_PORT
-        },
-        scheme: getSelectedScheme(),
-        mode: getMode()
-    };
-}
-
 async function saveProfile() {
     const name = els.profileName.value.trim();
-    if (!name) return showStatus("Введите имя профиля.");
+    if (!name) return;
 
-    const pr = buildFormProfile(name);
+    const p = {
+        name,
+        targets: parseTargets(els.targets.value),
+        http: { host: els.httpHost.value.trim(), port: els.httpPort.value.trim() },
+        ssl: { host: els.sslHost.value.trim(), port: els.sslPort.value.trim() },
+        ftp: { host: els.ftpHost.value.trim(), port: els.ftpPort.value.trim() },
+        scheme: getScheme(),
+        mode: getMode()
+    };
+
     const d = await storageGet("profiles");
     let profiles = d.profiles || [];
 
@@ -246,32 +265,25 @@ async function saveProfile() {
     profiles = [...new Set(profiles)];
 
     const obj = { profiles, activeProfile: name };
-    obj["profile:" + name] = pr;
+    obj["profile:" + name] = p;
 
     await storageSet(obj);
     await loadProfilesIntoUI();
     await applyCurrentProfile();
 
-    els.saveBtn.classList.remove("save-yellow");
     els.saveBtn.classList.add("save-green");
-    showStatus("Профиль сохранён.");
-}
+    els.saveBtn.classList.remove("save-yellow");
 
-async function resetProfile() {
-    const name = els.profileName.value.trim();
-    if (!name) return;
-    await loadProfile(name);
-    els.saveBtn.classList.add("save-green");
-    els.saveBtn.classList.remove("save-yellow");
-    showStatus("Настройки восстановлены.");
+    showStatus("Профиль сохранён");
 }
 
 async function deleteProfile() {
     const name = els.profileName.value.trim();
     const d = await storageGet(["profiles", "activeProfile"]);
-    let profiles = d.profiles || [];
 
+    let profiles = d.profiles || [];
     profiles = profiles.filter(p => p !== name);
+
     const obj = { profiles };
 
     if (d.activeProfile === name) {
@@ -288,15 +300,27 @@ async function deleteProfile() {
         await applyCurrentProfile();
     } else {
         fillDefaultForm();
-        els.profileSelect.textContent = "";
     }
 
-    showStatus("Профиль удалён.");
+    showStatus("Удалено");
+}
+
+async function resetProfile() {
+    const name = els.profileName.value.trim();
+    if (!name) return;
+
+    await loadProfile(name);
+
+    els.saveBtn.classList.add("save-green");
+    els.saveBtn.classList.remove("save-yellow");
+
+    showStatus("Восстановлено");
 }
 
 async function profileChanged() {
     const name = els.profileSelect.value;
     els.profileName.value = name;
+
     await storageSet({ activeProfile: name });
     await loadProfile(name);
     await applyCurrentProfile();
@@ -305,99 +329,78 @@ async function profileChanged() {
     els.saveBtn.classList.remove("save-yellow");
 }
 
-async function applyCurrentProfile() {
-    const d = await storageGet(["activeProfile", "proxyEnabled"]);
-    chrome.runtime.sendMessage({
-        type: "applyProfile",
-        name: d.activeProfile,
-        enabled: d.proxyEnabled
-    });
-}
-
-function toggleMode() {
-    if (els.modeToggle.classList.contains("on")) {
-        els.modeToggle.classList.remove("on");
-        els.modeText.textContent = "Введённые адреса будут проксироваться";
-    } else {
-        els.modeToggle.classList.add("on");
-        els.modeText.textContent = "Введённые адреса будут исключаться";
-    }
-    markDirty();
-}
-
-function toggleInfoBox() {
-    els.infoBox.classList.toggle("show");
-}
-
-function copyText() {
-    navigator.clipboard.writeText(els.copyList.textContent.trim());
-    showStatus("Скопировано");
-    setTimeout(() => showStatus(""), 1300);
-}
-
 async function toggleProxyPower() {
     const d = await storageGet("proxyEnabled");
-    const cur = d.proxyEnabled ?? false;
-    const st = !cur;
+    const next = !d.proxyEnabled;
 
-    await storageSet({ proxyEnabled: st });
-    updatePowerToggle(st);
+    await storageSet({ proxyEnabled: next });
+    updatePowerToggle(next);
 
-    chrome.runtime.sendMessage({
-        type: "proxyPower",
-        enabled: st
-    });
+    chrome.runtime.sendMessage({ type: "proxyPower", enabled: next });
 
-    if (st) {
+    if (next) {
         applyCurrentProfile();
-        showStatus("Прокси включён.");
+        showStatus("Прокси включён");
     } else {
-        showStatus("Прокси выключен.");
+        showStatus("Прокси выключен");
     }
 }
 
-function updatePowerToggle(on) {
-    if (on) {
-        els.proxyPowerToggle.classList.add("on");
-        els.proxyPowerLabel.textContent = "Вкл";
-    } else {
-        els.proxyPowerToggle.classList.remove("on");
-        els.proxyPowerLabel.textContent = "Выкл";
-    }
+async function toggleFastProxy() {
+    const d = await storageGet("showTabProxy");
+    const next = !d.showTabProxy;
+
+    await storageSet({ showTabProxy: next });
+    updateFastProxyToggle(next);
+
+    chrome.tabs.query({}, tabs => {
+        tabs.forEach(t => {
+            chrome.tabs.sendMessage(t.id, {
+                type: "updateFastProxyVisibility",
+                visible: next
+            });
+        });
+    });
 }
 
-function setupMirroring() {
-    const { httpHost, httpPort, sslHost, sslPort, ftpHost, ftpPort } = els;
+async function addCurrentSite() {
+    const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (!tabs.length) return;
 
-    sslHost.dataset.synced = "true";
-    ftpHost.dataset.synced = "true";
-    sslPort.dataset.synced = "true";
-    ftpPort.dataset.synced = "true";
+    let host = "";
+    try { host = new URL(tabs[0].url).hostname; } catch {}
 
-    httpHost.addEventListener("input", () => {
-        if (sslHost.dataset.synced === "true") sslHost.value = httpHost.value;
-        if (ftpHost.dataset.synced === "true") ftpHost.value = httpHost.value;
-        markDirty();
-    });
+    if (!host) return;
 
-    httpPort.addEventListener("input", () => {
-        if (sslPort.dataset.synced === "true") sslPort.value = httpPort.value;
-        if (ftpPort.dataset.synced === "true") ftpPort.value = httpPort.value;
-        markDirty();
-    });
+    const parts = host.split(".");
+    if (parts.length < 2) return;
 
-    const breakSync = el => el.addEventListener("input", () => {
-        el.dataset.synced = "false";
-        markDirty();
-    });
+    const root = parts.slice(-2).join(".");
+    const wildcard = "*." + root;
 
-    [sslHost, ftpHost, sslPort, ftpPort].forEach(breakSync);
+    const existing = parseTargets(els.targets.value);
+    const add = [];
+
+    if (!existing.includes(root)) add.push(root);
+    if (!existing.includes(wildcard)) add.push(wildcard);
+
+    if (!add.length) {
+        showStatus("Уже существует");
+        return;
+    }
+
+    els.targets.value =
+        add.join("\n") +
+        "\n" +
+        els.targets.value.trim();
+
+    markDirty();
+    showStatus("Добавлено: " + add.join(", "));
 }
 
 async function exportSettings() {
     const d = await storageGet(null);
     const text = JSON.stringify(d, null, 2);
-
     const blob = new Blob([text], { type: "application/json" });
     const url = URL.createObjectURL(blob);
 
@@ -411,59 +414,55 @@ async function exportSettings() {
 
 async function importSettings(file) {
     try {
-        const text = await file.text();
-        const data = JSON.parse(text);
+        const txt = await file.text();
+        const obj = JSON.parse(txt);
 
-        if (typeof data !== "object" || data === null) {
-            showStatus("Invalid settings file.");
+        if (!obj || typeof obj !== "object") {
+            showStatus("Некорректный файл");
             return;
         }
 
         await chrome.storage.local.clear();
-        await chrome.storage.local.set(data);
-
-        showStatus("Настройки импортированы.");
-
+        await chrome.storage.local.set(obj);
         await loadProfilesIntoUI();
 
-        const { proxyEnabled, activeProfile } = data;
-        if (proxyEnabled && activeProfile) {
-            chrome.runtime.sendMessage({
-                type: "applyProfile",
-                name: activeProfile,
-                enabled: true
-            });
-        }
-    } catch (_) {
-        showStatus("Ошибка импорта.");
+        showStatus("Импортировано");
+    } catch {
+        showStatus("Ошибка импорта");
     }
 }
 
+async function applyCurrentProfile() {
+    const d = await storageGet(["activeProfile", "proxyEnabled"]);
+    chrome.runtime.sendMessage({
+        type: "applyProfile",
+        name: d.activeProfile,
+        enabled: d.proxyEnabled
+    });
+}
+
 document.addEventListener("DOMContentLoaded", async () => {
-    setupMirroring();
     await loadProfilesIntoUI();
 
     els.saveBtn.addEventListener("click", saveProfile);
-    els.resetBtn.addEventListener("click", resetProfile);
     els.deleteBtn.addEventListener("click", deleteProfile);
+    els.resetBtn.addEventListener("click", resetProfile);
+
     els.profileSelect.addEventListener("change", profileChanged);
 
-    els.modeToggle.addEventListener("click", toggleMode);
-    els.infoIcon.addEventListener("click", toggleInfoBox);
-    els.copyButton.addEventListener("click", copyText);
     els.proxyPowerToggle.addEventListener("click", toggleProxyPower);
 
-    [
-        els.targets,
-        els.httpHost, els.httpPort,
-        els.sslHost, els.sslPort,
-        els.ftpHost, els.ftpPort,
-        els.profileName,
-        ...els.schemeRadios
-    ].forEach(el => {
-        el.addEventListener("input", markDirty);
-        el.addEventListener("change", markDirty);
+    els.modeToggle.addEventListener("click", () => {
+        markDirty();
+        const on = els.modeToggle.classList.toggle("on");
+        els.modeText.textContent = on
+            ? "Введённые адреса будут исключаться"
+            : "Введённые адреса будут проксироваться";
     });
+
+    els.toggleFastProxy.addEventListener("click", toggleFastProxy);
+
+    els.addCurrentBtn.addEventListener("click", addCurrentSite);
 
     els.exportSettings.addEventListener("click", e => {
         e.preventDefault();
@@ -478,5 +477,29 @@ document.addEventListener("DOMContentLoaded", async () => {
     els.importFile.addEventListener("change", () => {
         const f = els.importFile.files[0];
         if (f) importSettings(f);
+    });
+
+    const formInputs = [
+        els.targets,
+        els.profileName,
+        els.httpHost, els.httpPort,
+        els.sslHost, els.sslPort,
+        els.ftpHost, els.ftpPort,
+        ...document.querySelectorAll('input[name="scheme"]')
+    ];
+
+    formInputs.forEach(el => {
+        if (!el) return;
+        el.addEventListener("input", markDirty);
+        el.addEventListener("change", markDirty);
+    });
+
+    els.infoIcon.addEventListener("click", () => {
+        els.infoBox.classList.toggle("show");
+    });
+
+    els.copyButton.addEventListener("click", () => {
+        navigator.clipboard.writeText(els.copyList.textContent.trim());
+        showStatus("Скопировано");
     });
 });

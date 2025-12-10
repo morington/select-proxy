@@ -66,6 +66,7 @@
       background: #2c2f36;
       border-radius: 22px;
       transition: background 0.2s;
+      cursor: pointer;
     }
 
     .toggle-power::after {
@@ -88,6 +89,17 @@
       transform: translateX(22px);
     }
 
+    /* Small toggle for the bottom row */
+    .toggle-small {
+      width: 38px;
+      height: 20px;
+    }
+
+    .toggle-small::after {
+      width: 16px;
+      height: 16px;
+    }
+
     span {
       font-size: 11px;
       color: #8b8f9a;
@@ -101,10 +113,9 @@
     .row { margin-bottom: 14px; }
     .label { font-size: 12px; color: #a3a7b3; margin-bottom: 4px; }
 
-    input[type="text"],
-    input[type="number"],
-    select,
-    textarea {
+    input,
+    textarea,
+    select {
       width: 100%;
       background: #101217;
       border-radius: 8px;
@@ -113,7 +124,11 @@
       font-size: 13px;
       padding: 6px 8px;
       outline: none;
-      transition: 0.15s;
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 55px;
     }
 
     input:focus,
@@ -123,143 +138,79 @@
       box-shadow: 0 0 8px rgba(78,140,255,0.35);
     }
 
-    textarea {
-      resize: vertical;
-      min-height: 55px;
-      line-height: 1.4;
-    }
-
     #profile-row {
       display: grid;
-      grid-template-columns: 1.5fr 1fr auto auto auto;
-      gap: 6px;
+      grid-template-columns: 1fr 140px auto auto auto;
+      gap: 8px;
       align-items: center;
     }
 
-    button.icon-btn {
-      width: 34px;
-      height: 34px;
-      border: none;
+    .icon-btn {
+      width: 32px;
+      height: 32px;
       border-radius: 8px;
-      background: #2b2f3a;
+      border: 1px solid #2c2f36;
+      background: #101217;
       display: flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
-      transition: 0.15s;
     }
 
-    button.icon-btn img {
-      width: 18px;
-      height: 18px;
+    .icon-btn img {
+      width: 16px;
+      height: 16px;
     }
 
-    .save-green { background: #2ecc71 !important; }
-    .save-yellow { background: #e6c447 !important; }
-
-    #deleteBtn:hover { background: #e74c3c !important; }
-    #resetBtn:hover { background: #4e8cff !important; }
-
-    #proxy-grid {
-      display: grid;
-      grid-template-columns: 0.8fr 1.7fr 0.6fr;
-      gap: 6px 8px;
-      align-items: center;
+    #saveBtn.save-green {
+      background: #2ecc71;
+      border-color: #2ecc71;
     }
 
-    #proxy-grid .name {
-      font-size: 12px;
-      color: #b5b9c5;
+    #saveBtn.save-yellow {
+      background: #f1c40f;
+      border-color: #f1c40f;
+    }
+
+    #deleteBtn:hover {
+      background: #e74c3c;
+      border-color: #e74c3c;
+    }
+
+    #resetBtn:hover {
+      background: #3498db;
+      border-color: #3498db;
     }
 
     #scheme-row {
       display: flex;
-      flex-wrap: wrap;
       gap: 10px;
-      margin-top: 4px;
+      flex-wrap: wrap;
     }
 
     .radio-label {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      font-size: 12px;
-      cursor: pointer;
-      color: #d3d6df;
-    }
-
-    .toggle-row {
       display: flex;
       align-items: center;
-      justify-content: space-between;
-    }
-
-    .toggle-text {
+      gap: 4px;
+      cursor: pointer;
       font-size: 13px;
-      color: #d8d8d8;
-      font-weight: 500;
     }
 
-    .toggle-wrapper {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .toggle {
-      position: relative;
-      width: 44px;
-      height: 22px;
-      background: #2c2f36;
-      border-radius: 22px;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
-
-    .toggle::after {
-      content: "";
-      position: absolute;
-      width: 18px;
-      height: 18px;
-      background: #fff;
-      border-radius: 50%;
-      top: 2px;
-      left: 2px;
-      transition: transform 0.2s;
-    }
-
-    .toggle.on {
-      background: #4e8cff;
-    }
-
-    .toggle.on::after {
-      transform: translateX(22px);
-    }
-
-    .info {
-      width: 16px;
-      height: 16px;
-      cursor: pointer;
-      opacity: 0.8;
-    }
-
+    /* Info box */
     #infoBox {
+      display: none;
       background: #1e1f25;
       border: 1px solid #30323a;
       border-radius: 8px;
       padding: 10px 12px;
       font-size: 12px;
+      margin-top: 8px;
       line-height: 1.4;
       color: #cdd0d8;
-      margin-top: 8px;
-      display: none;
-      opacity: 0;
-      transition: 0.25s;
     }
 
     #infoBox.show {
       display: block;
-      opacity: 1;
     }
 
     #copyBlock {
@@ -273,42 +224,41 @@
       align-items: center;
     }
 
-    #copyBlock .list {
+    #copyList {
       font-family: monospace;
       font-size: 12px;
-      color: #9fa3ad;
-      overflow-x: auto;
-    }
-
-    #copyButton {
-      background: #2c2f36;
-      width: 28px;
-      height: 28px;
-      border-radius: 6px;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      cursor: pointer;
     }
 
     #status {
       margin-top: 6px;
       font-size: 11px;
-      color: #8b8f9a;
       min-height: 14px;
     }
 
-    #importExportRow {
+    /* Bottom row: toggle + label + import/export */
+    #bottomRow {
       margin-top: 18px;
-      text-align: right;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
       font-size: 12px;
     }
 
-    #importExportRow a {
+    #bottomLeft {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    #importExport {
+      display: flex;
+      gap: 15px;
+    }
+
+    #importExport a {
       color: #4e8cff;
-      margin-left: 15px;
-      cursor: pointer;
       text-decoration: none;
+      cursor: pointer;
     }
   </style>
 </head>
@@ -326,7 +276,7 @@
       </div>
     </div>
 
-    <span>by <a href="https://t.me/morington" target="_blank" class="tg-link">morington</a></span>
+    <span>by <a href="https://t.me/morington" class="tg-link" target="_blank">morington</a></span>
   </div>
 
   <div class="row">
@@ -336,50 +286,47 @@
       <input id="profileName" type="text" placeholder="Название профиля">
       <select id="profileSelect"></select>
 
-      <button id="saveBtn" class="icon-btn save-green">
-        <img src="icons/components/save.svg">
-      </button>
-      <button id="deleteBtn" class="icon-btn">
-        <img src="icons/components/delete.svg">
-      </button>
-      <button id="resetBtn" class="icon-btn">
-        <img src="icons/components/reset.svg">
-      </button>
+      <button id="saveBtn" class="icon-btn save-green"><img src="icons/components/save.svg"></button>
+      <button id="deleteBtn" class="icon-btn"><img src="icons/components/delete.svg"></button>
+      <button id="resetBtn" class="icon-btn"><img src="icons/components/reset.svg"></button>
     </div>
   </div>
 
   <div class="row">
-    <div class="toggle-row">
-      <div class="toggle-text" id="modeText">Введённые адреса будут проксироваться</div>
-      <div class="toggle-wrapper">
-        <div id="modeToggle" class="toggle"></div>
-        <img id="infoIcon" src="icons/components/info.svg" class="info">
+    <div class="toggle-row" style="display:flex; justify-content:space-between; align-items:center;">
+      <div id="modeText" class="toggle-text">Введённые адреса будут проксироваться</div>
+
+      <div style="display:flex; align-items:center; gap:6px;">
+        <div id="modeToggle" class="toggle-power"></div>
+        <img id="infoIcon" src="icons/components/info.svg" class="info" style="width:16px; height:16px; cursor:pointer;">
       </div>
     </div>
 
     <div id="infoBox">
       <div>
         Если вы используете режим, при котором все сайты идут через прокси,
-        а введённые адреса исключаются, рекомендуется добавить сюда локальные адреса,
-        чтобы внутренняя сеть и программы работали корректно.
+        а введённые адреса исключаются, рекомендуется добавить сюда локальные адреса.
       </div>
 
       <div id="copyBlock">
         <div class="list" id="copyList">localhost, 127.0.0.1, 192.168.*.*</div>
-        <div id="copyButton"><img src="icons/components/copy.svg" width="16"></div>
+        <div id="copyButton" style="cursor:pointer;"><img src="icons/components/copy.svg" width="16"></div>
       </div>
     </div>
   </div>
 
   <div class="row">
     <div class="label">Адреса</div>
-    <textarea id="targets" rows="3"></textarea>
+    <div style="display:flex; gap:8px; align-items:flex-start;">
+      <textarea id="targets" rows="3" style="flex:1;"></textarea>
+      <button id="addCurrentBtn" class="icon-btn"><img src="icons/components/save.svg"></button>
+    </div>
   </div>
 
   <div class="row">
     <div class="label">Настройки прокси</div>
 
-    <div id="proxy-grid">
+    <div id="proxy-grid" style="display:grid; grid-template-columns: 120px 1fr 90px; gap:6px 10px;">
       <div class="name">HTTP Proxy</div>
       <input id="httpHost" type="text">
       <input id="httpPort" type="number">
@@ -407,10 +354,20 @@
 
   <div id="status"></div>
 
-  <div id="importExportRow">
-    <a id="exportSettings">Export settings</a>
-    <a id="importSettings">Import settings</a>
-    <input id="importFile" type="file" accept="application/json" style="display:none;">
+  <!-- NEW FINAL ROW -->
+  <div id="bottomRow">
+
+    <div id="bottomLeft">
+      <div id="toggleFastProxy" class="toggle-power toggle-small"></div>
+      <span>Кнопка быстрого прокси</span>
+    </div>
+
+    <div id="importExport">
+      <a id="exportSettings">Export</a>
+      <a id="importSettings">Import</a>
+      <input id="importFile" type="file" accept="application/json" hidden>
+    </div>
+
   </div>
 
 </div>

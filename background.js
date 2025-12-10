@@ -1,3 +1,7 @@
+const tabProxy = {};
+const tabHosts = {};
+const hostRefs = {};
+
 async function loadImage(path) {
     const url = chrome.runtime.getURL(path);
     const r = await fetch(url);
@@ -44,24 +48,31 @@ function buildProxyString(scheme, http, ssl, ftp) {
     return a.join("; ");
 }
 
-function pacProxyOnly(listStr, proxyStr) {
+function buildPac(mode, listStr, proxyStr, overrideStr) {
     return `
-    function FindProxyForURL(url, host) {
-        var t=${listStr};
-        function m(x){if(x.startsWith("*."))return dnsDomainIs(host,x.substring(1));return host===x;}
-        for(var i=0;i<t.length;i++)if(m(t[i]))return "${proxyStr}";
-        return "DIRECT";
-    }`;
-}
-
-function pacBypass(listStr, proxyStr) {
-    return `
-    function FindProxyForURL(url, host) {
-        var b=${listStr};
-        function m(x){if(x.startsWith("*."))return dnsDomainIs(host,x.substring(1));return host===x;}
-        for(var i=0;i<b.length;i++)if(m(b[i]))return "DIRECT";
-        return "${proxyStr}";
-    }`;
+function FindProxyForURL(url, host) {
+  var override=${overrideStr};
+  function match(list,h){
+    for(var i=0;i<list.length;i++){
+      var t=list[i];
+      if(t.indexOf("*.")===0){
+        if(dnsDomainIs(h,t.substring(1)))return true;
+      }else if(h===t){
+        return true;
+      }
+    }
+    return false;
+  }
+  if(match(override,host))return "${proxyStr}";
+  var targets=${listStr};
+  if("${mode}"==="proxy"){
+    if(match(targets,host))return "${proxyStr}";
+    return "DIRECT";
+  }else{
+    if(match(targets,host))return "DIRECT";
+    return "${proxyStr}";
+  }
+}`;
 }
 
 function getProfile(name) {
@@ -80,9 +91,12 @@ async function applyProfile(name, enabled) {
         disableProxy();
         return;
     }
+
     const listStr = JSON.stringify(pr.targets || []);
     const proxyStr = buildProxyString(pr.scheme, pr.http, pr.ssl, pr.ftp);
-    const pac = pr.mode === "proxy" ? pacProxyOnly(listStr, proxyStr) : pacBypass(listStr, proxyStr);
+    const overrideHosts = Object.keys(hostRefs).filter(h => hostRefs[h] > 0);
+    const overrideStr = JSON.stringify(overrideHosts);
+    const pac = buildPac(pr.mode, listStr, proxyStr, overrideStr);
 
     chrome.proxy.settings.set(
         {
@@ -107,9 +121,101 @@ function disableProxy() {
     setIconColor([231, 76, 60]);
 }
 
-chrome.runtime.onMessage.addListener(msg => {
-    if (msg.type === "applyProfile") applyProfile(msg.name, msg.enabled);
-    if (msg.type === "proxyPower") msg.enabled ? enableProxy() : disableProxy();
+function addHostForTab(tabId, host) {
+    if (!host) return;
+    if (!tabHosts[tabId]) tabHosts[tabId] = new Set();
+    if (!tabHosts[tabId].has(host)) {
+        tabHosts[tabId].add(host);
+        hostRefs[host] = (hostRefs[host] || 0) + 1;
+    }
+}
+
+function clearTabHosts(tabId) {
+    const set = tabHosts[tabId];
+    if (!set) return;
+    for (const h of set) {
+        hostRefs[h] = (hostRefs[h] || 0) - 1;
+        if (hostRefs[h] <= 0) delete hostRefs[h];
+    }
+    delete tabHosts[tabId];
+    delete tabProxy[tabId];
+}
+
+async function refreshPacIfNeeded() {
+    const d = await chrome.storage.local.get(["activeProfile", "proxyEnabled"]);
+    if (!d.proxyEnabled || !d.activeProfile) return;
+    applyProfile(d.activeProfile, true);
+}
+
+chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+    if (msg.type === "applyProfile") {
+        applyProfile(msg.name, msg.enabled);
+        return;
+    }
+
+    if (msg.type === "proxyPower") {
+        msg.enabled ? enableProxy() : disableProxy();
+        return;
+    }
+
+    if (msg.type === "getTabProxyState") {
+        const tabId = sender.tab && sender.tab.id;
+        if (tabId == null) {
+            sendResponse({ enabled: false });
+            return;
+        }
+        sendResponse({ enabled: !!(tabProxy[tabId] && tabProxy[tabId].enabled) });
+        return true;
+    }
+
+    if (msg.type === "toggleTabProxy") {
+        const tabId = sender.tab && sender.tab.id;
+        if (tabId == null) {
+            sendResponse({ enabled: false, reload: false });
+            return;
+        }
+
+        const url = msg.url;
+        let host = "";
+        try {
+            host = new URL(url).hostname;
+        } catch (_) {}
+
+        const current = tabProxy[tabId] && tabProxy[tabId].enabled;
+
+        if (!current) {
+            tabProxy[tabId] = { enabled: true };
+            addHostForTab(tabId, host);
+            refreshPacIfNeeded();
+            sendResponse({ enabled: true, reload: true });
+        } else {
+            clearTabHosts(tabId);
+            refreshPacIfNeeded();
+            sendResponse({ enabled: false, reload: true });
+        }
+
+        return true;
+    }
+});
+
+chrome.webNavigation.onCommitted.addListener(details => {
+    if (details.frameId !== 0) return;
+    const tabId = details.tabId;
+    if (!tabProxy[tabId] || !tabProxy[tabId].enabled) return;
+
+    let host = "";
+    try {
+        host = new URL(details.url).hostname;
+    } catch (_) {}
+
+    addHostForTab(tabId, host);
+    refreshPacIfNeeded();
+});
+
+chrome.tabs.onRemoved.addListener(tabId => {
+    if (!tabProxy[tabId]) return;
+    clearTabHosts(tabId);
+    refreshPacIfNeeded();
 });
 
 chrome.runtime.onStartup.addListener(async () => {
