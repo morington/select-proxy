@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Логи расширения</title>
+    <style>
+        :root {
+            color-scheme: dark;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            background: #0d0e11;
+            color: #e5e7eb;
+            font: 13px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+        }
+
+        .app {
+            padding: 10px;
+            min-height: 100vh;
+        }
+
+        .panel {
+            border: 1px solid #26272e;
+            border-radius: 10px;
+            background: #181a20;
+            overflow: hidden;
+        }
+
+        .topbar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px;
+            border-bottom: 1px solid #26272e;
+        }
+
+        .title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #f3f4f6;
+        }
+
+        .meta {
+            margin-left: auto;
+            font-size: 11px;
+            color: #8b8f9a;
+        }
+
+        .subbar {
+            padding: 10px 12px;
+            border-bottom: 1px solid #26272e;
+            color: #9ca3af;
+            font-size: 11px;
+            line-height: 1.45;
+            background: #14161b;
+        }
+
+        .subbar a {
+            color: #7fb0ff;
+            text-decoration: none;
+        }
+
+        .subbar a:hover {
+            text-decoration: underline;
+        }
+
+        .toolbar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 12px;
+            border-bottom: 1px solid #26272e;
+        }
+
+        .button {
+            border: 1px solid #31343d;
+            background: #101217;
+            color: #e5e7eb;
+            height: 30px;
+            padding: 0 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .button:hover {
+            border-color: #4e8cff;
+        }
+
+        .button-primary {
+            background: #1b335a;
+            border-color: #2d5fb8;
+            color: #dbeafe;
+        }
+
+        .button-danger {
+            background: #35181b;
+            border-color: #6b252d;
+            color: #fecdd3;
+        }
+
+        .list {
+            padding: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .entry {
+            border: 1px solid #2b2e38;
+            border-radius: 8px;
+            background: #111318;
+            padding: 10px;
+        }
+
+        .entry-top {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+
+        .badge {
+            border: 1px solid #323645;
+            background: #171a22;
+            border-radius: 999px;
+            padding: 2px 8px;
+            font-size: 10px;
+            color: #cbd5e1;
+        }
+
+        .badge.info {
+            color: #bfdbfe;
+            border-color: #2b4a79;
+        }
+
+        .badge.warn {
+            color: #fde68a;
+            border-color: #69531a;
+        }
+
+        .badge.error {
+            color: #fecaca;
+            border-color: #7a2b35;
+        }
+
+        .event {
+            font-weight: 600;
+            color: #e5e7eb;
+        }
+
+        .ts {
+            margin-left: auto;
+            font-size: 11px;
+            color: #8b8f9a;
+        }
+
+        pre {
+            margin: 0;
+            white-space: pre-wrap;
+            word-break: break-word;
+            color: #a5b4c3;
+            font: 12px/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        }
+
+        .empty {
+            padding: 24px 12px;
+            text-align: center;
+            color: #8b8f9a;
+        }
+    </style>
+</head>
+<body>
+<div class="app">
+    <div class="panel">
+        <div class="topbar">
+            <div class="title">Логи расширения</div>
+            <div id="logMeta" class="meta">0 записей</div>
+        </div>
+
+        <div class="subbar">
+            Если что-то работает не так, прикладывайте экспорт логов в issue:
+            <a href="https://github.com/morington/select-proxy" target="_blank">github.com/morington/select-proxy</a>
+        </div>
+
+        <div class="toolbar">
+            <button id="refreshButton" class="button button-primary">Обновить</button>
+            <button id="exportButton" class="button button-primary">Экспорт логов</button>
+            <button id="clearButton" class="button button-danger">Очистить</button>
+        </div>
+
+        <div id="emptyState" class="empty" style="display:none;">Логов пока нет</div>
+        <div id="logList" class="list"></div>
+    </div>
+</div>
+
+<script src="log_monitor.js"></script>
+</body>
+</html>

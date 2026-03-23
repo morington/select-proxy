@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Select Proxy",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "description": "Выборочный прокси: только указанные домены/IP-адреса проходят через прокси",
 
   "permissions": [
@@ -9,7 +9,10 @@
     "storage",
     "notifications",
     "tabs",
-    "webNavigation"
+    "webNavigation",
+    "webRequest",
+    "webRequestAuthProvider",
+    "activeTab"
   ],
 
   "host_permissions": [

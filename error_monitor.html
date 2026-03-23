@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Монитор ошибок сайта</title>
+    <style>
+        :root {
+            color-scheme: dark;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            background: #0d0e11;
+            color: #e5e7eb;
+            font: 13px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+        }
+
+        .app {
+            width: 100%;
+            min-height: 100vh;
+            padding: 10px;
+        }
+
+        .panel {
+            border: 1px solid #26272e;
+            border-radius: 10px;
+            background: #181a20;
+            overflow: hidden;
+        }
+
+        .topbar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 12px;
+            border-bottom: 1px solid #26272e;
+        }
+
+        .title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #f3f4f6;
+        }
+
+        .meta {
+            margin-left: auto;
+            font-size: 11px;
+            color: #8b8f9a;
+        }
+
+        .subbar {
+            padding: 8px 12px;
+            border-bottom: 1px solid #26272e;
+            background: #14161b;
+            color: #9ca3af;
+            font-size: 11px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .toolbar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 12px;
+            border-bottom: 1px solid #26272e;
+        }
+
+        .button {
+            border: 1px solid #31343d;
+            background: #101217;
+            color: #e5e7eb;
+            height: 30px;
+            padding: 0 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .button:hover {
+            border-color: #4e8cff;
+        }
+
+        .button:disabled {
+            opacity: 0.55;
+            cursor: default;
+        }
+
+        .button-primary {
+            background: #1b335a;
+            border-color: #2d5fb8;
+            color: #dbeafe;
+        }
+
+        .button-danger {
+            background: #35181b;
+            border-color: #6b252d;
+            color: #fecdd3;
+        }
+
+        .stats {
+            margin-left: auto;
+            display: flex;
+            gap: 10px;
+            font-size: 11px;
+            color: #9ca3af;
+        }
+
+        .list {
+            padding: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .item {
+            border: 1px solid #2b2e38;
+            border-radius: 8px;
+            background: #111318;
+            padding: 10px;
+        }
+
+        .row {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+        }
+
+        .row + .row {
+            margin-top: 8px;
+        }
+
+        .host {
+            font-weight: 600;
+            color: #7fb0ff;
+            word-break: break-all;
+        }
+
+        .badge {
+            margin-left: auto;
+            border: 1px solid #323645;
+            background: #171a22;
+            color: #9ca3af;
+            border-radius: 999px;
+            padding: 2px 8px;
+            font-size: 10px;
+            white-space: nowrap;
+        }
+
+        .error-text {
+            color: #fca5a5;
+            word-break: break-word;
+        }
+
+        .muted {
+            color: #8b8f9a;
+            font-size: 11px;
+            word-break: break-all;
+        }
+
+        .state {
+            color: #cbd5e1;
+            font-size: 11px;
+        }
+
+        .actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .empty {
+            padding: 24px 12px;
+            text-align: center;
+            color: #8b8f9a;
+        }
+
+        .chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            border: 1px solid #2f3440;
+            background: #13161c;
+            color: #cbd5e1;
+            border-radius: 999px;
+            padding: 4px 8px;
+            font-size: 11px;
+        }
+
+        .chip.mode-proxy {
+            color: #bbf7d0;
+            border-color: #23543c;
+            background: #112019;
+        }
+
+        .chip.mode-bypass {
+            color: #fde68a;
+            border-color: #5b4a18;
+            background: #211b0f;
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <div class="panel">
+            <div class="topbar">
+                <div class="title">Монитор ошибок сайта</div>
+                <div id="modeChip" class="chip">Режим: —</div>
+                <div id="stats" class="meta">0 хостов · 0 событий</div>
+            </div>
+
+            <div id="pageInfo" class="subbar">Загрузка…</div>
+
+            <div class="toolbar">
+                <button id="refreshButton" class="button button-primary">Обновить</button>
+                <button id="clearButton" class="button button-danger">Очистить</button>
+            </div>
+
+            <div id="emptyState" class="empty" style="display:none;">
+                Ошибок по вкладке пока нет
+            </div>
+
+            <div id="errorList" class="list"></div>
+        </div>
+    </div>
+
+    <script src="error_monitor.js"></script>
+</body>
+</html>
